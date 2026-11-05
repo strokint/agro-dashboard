@@ -98,16 +98,46 @@ with tab1:
 with tab2:
     st.subheader("Обновление и выбытие техники по годам")
     
-    def create_dyn_chart(df, title):
+       def create_dyn_chart(df, title):
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df["Год"], y=df["Обновление, %"], mode='lines+markers+text', name='Обновление, %', text=df["Обновление, %"], textposition="top center", line=dict(color='#4472C4', width=3)))
-        fig.add_trace(go.Scatter(x=df["Год"], y=df["Выбытие, %"], mode='lines+markers+text', name='Выбытие, %', text=df["Выбытие, %"], textposition="bottom center", line=dict(color='#C0504D', width=3)))
-        fig.update_layout(title=title, yaxis_title="Проценты", xaxis_title="Год", height=400)
+        
+        # Добавляем график Обновления
+        fig.add_trace(go.Scatter(
+            x=df["Год"], 
+            y=df["Обновление, %"], 
+            mode='lines+markers+text', 
+            name='Обновление, %', 
+            text=df["Обновление, %"], 
+            textposition="top center", 
+            line=dict(color='#4472C4', width=3),
+            cliponaxis=False  # <--- Отключает обрезку подписей по краям
+        ))
+        
+        # Добавляем график Выбытия
+        fig.add_trace(go.Scatter(
+            x=df["Год"], 
+            y=df["Выбытие, %"], 
+            mode='lines+markers+text', 
+            name='Выбытие, %', 
+            text=df["Выбытие, %"], 
+            textposition="bottom center", 
+            line=dict(color='#C0504D', width=3),
+            cliponaxis=False  # <--- Отключает обрезку подписей по краям
+        ))
+        
+        # Настраиваем отступы и углы наклона подписей
+        fig.update_layout(
+            title=title, 
+            yaxis_title="Проценты", 
+            xaxis_title="Год", 
+            height=400,
+            margin=dict(b=80) # Добавляем место снизу для длинной подписи
+        )
+        
+        # Наклоняем подписи по оси X, чтобы длинный текст "2026 (на тек. дату)" не наезжал на другие
+        fig.update_xaxes(tickangle=-30) 
+        
         return fig
-
-    st.plotly_chart(create_dyn_chart(tractors_dyn, "Тракторы"), use_container_width=True)
-    st.plotly_chart(create_dyn_chart(grain_dyn, "Зерноуборочные комбайны"), use_container_width=True)
-    st.plotly_chart(create_dyn_chart(forage_dyn, "Кормоуборочные комбайны"), use_container_width=True)
 
 with tab3:
     st.subheader("Приобретение техники: План vs Факт")
