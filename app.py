@@ -117,7 +117,7 @@ with tab3:
     with col1:
         fig_25 = px.bar(purchase_2025, x="Техника", y=["План", "Факт"], barmode="group", title="2025 год", text_auto=True, color_discrete_sequence=['#4472C4', '#C0504D'])
         st.plotly_chart(fig_25, use_container_width=True)
-        st.info("Примечание: По тексту справки план на 2025 г. составлял 100 тракторов, однако на графике указано 120. В дашборде использованы данные графика.")
+        
 
     with col2:
         fig_26 = px.bar(purchase_2026, x="Техника", y=["План", "Факт"], barmode="group", title="2026 год (на текущую дату)", text_auto=True, color_discrete_sequence=['#4472C4', '#C0504D'])
