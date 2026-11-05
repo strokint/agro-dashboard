@@ -101,26 +101,35 @@ with tab2:
     def create_dyn_chart(df, title):
         fig = go.Figure()
         
-        # Добавляем график Обновления
+        # Явно переводим цифры в строки для надежного отображения
+        text_update = [str(val) for val in df["Обновление, %"]]
+        text_disposal = [str(val) for val in df["Выбытие, %"]]
+        
+        # Находим максимальное значение, чтобы задать отступ сверху
+        max_val = max(df["Обновление, %"].max(), df["Выбытие, %"].max())
+        
+        # График Обновления
         fig.add_trace(go.Scatter(
             x=df["Год"], 
             y=df["Обновление, %"], 
             mode='lines+markers+text', 
             name='Обновление, %', 
-            text=df["Обновление, %"], 
+            text=text_update, 
             textposition="top center", 
+            textfont=dict(size=12, color='#4472C4'), # Делаем текст синим под цвет линии
             line=dict(color='#4472C4', width=3),
             cliponaxis=False
         ))
         
-        # Добавляем график Выбытия
+        # График Выбытия
         fig.add_trace(go.Scatter(
             x=df["Год"], 
             y=df["Выбытие, %"], 
             mode='lines+markers+text', 
             name='Выбытие, %', 
-            text=df["Выбытие, %"], 
+            text=text_disposal, 
             textposition="bottom center", 
+            textfont=dict(size=12, color='#C0504D'), # Делаем текст красным под цвет линии
             line=dict(color='#C0504D', width=3),
             cliponaxis=False
         ))
@@ -129,11 +138,20 @@ with tab2:
             title=title, 
             yaxis_title="Проценты", 
             xaxis_title="Год", 
-            height=400,
-            margin=dict(b=80)
+            height=450, # Чуть увеличили высоту
+            # Задаем жесткие границы оси Y: от -2 (для подписей снизу) до max+3 (для подписей сверху)
+            yaxis=dict(range=[-2, max_val + 3]),
+            margin=dict(l=40, r=40, t=50, b=100) # Добавили места снизу
         )
         
-        fig.update_xaxes(tickangle=-30) 
+        # Принудительно задаем все годы, чтобы ни один не пропал
+        fig.update_xaxes(
+            type='category', 
+            tickangle=-45,
+            tickmode='array',
+            tickvals=df["Год"],
+            ticktext=df["Год"]
+        )
         
         return fig
 
