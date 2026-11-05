@@ -81,7 +81,7 @@ with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Техническая готовность, %")
+        st.subheader("Техническая обеспеченность, %")
         fig_ready = px.bar(readiness_data, x="Техника", y="Готовность, %", text="Готовность, %", color_discrete_sequence=['#4472C4'])
         fig_ready.update_traces(texttemplate='%{text}%', textposition='outside')
         fig_ready.update_layout(yaxis_range=[0, 70])
