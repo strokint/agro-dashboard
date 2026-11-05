@@ -109,7 +109,7 @@ with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Техническая готовность, %")
+        st.subheader("Техническая оснащенность, %")
         fig_ready = px.bar(readiness_data, x="Техника", y="Готовность, %", text="Готовность, %", color_discrete_sequence=[COLOR_GREEN])
         fig_ready.update_traces(texttemplate='%{text}%', textposition='outside', textfont=dict(color=COLOR_DARK))
         fig_ready.update_layout(
