@@ -124,7 +124,7 @@ with tab3:
         st.plotly_chart(fig_26, use_container_width=True)
 
 with tab4:
-    st.subheader("Заявки на приобретение техники в АО "Росагролизинг" (2026 год)")
+    st.subheader("Заявки на приобретение техники в АО Росагролизинг (2026 год)")
     st.markdown("С начала 2026 года подано **77 заявок** на **90 единиц** техники.")
     
     col1, col2, col3 = st.columns(3)
