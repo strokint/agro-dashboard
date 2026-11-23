@@ -39,10 +39,10 @@ def get_default_data():
         "date": "05.11.2026",
         "metrics": {"Тракторы": 3286, "Зерноуборочные комбайны": 1094, "Кормоуборочные комбайны": 140, "Другая техника": 7000},
         "readiness": [
-            {"Техника": "Тракторы", "Готовность, %": 52},
-            {"Техника": "Зерноуборочные", "Готовность, %": 30},
-            {"Техника": "Кормоуборочные", "Готовность, %": 59},
-            {"Техника": "Другая техника", "Готовность, %": 55}
+            {"Техника": "Тракторы", "Оснащенность, %": 52},
+            {"Техника": "Зерноуборочные", "Оснащенность, %": 30},
+            {"Техника": "Кормоуборочные", "Оснащенность, %": 59},
+            {"Техника": "Другая техника", "Оснащенность, %": 55}
         ],
         "load": [
             {"Техника": "Тракторы", "Факт": 233, "Норматив": 120},
@@ -90,11 +90,14 @@ def load_data():
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
             
-            # --- МИГРАЦИЯ ДАННЫХ ---
-            # Если в старом файле нет новых разделов, добавляем их из дефолтных данных
+            # Миграция старых данных (добавление лизинга и смена названия колонки)
             if "leasing" not in data:
                 data["leasing"] = default_data["leasing"]
                 
+            if "readiness" in data and data["readiness"] and "Готовность, %" in data["readiness"][0]:
+                for row in data["readiness"]:
+                    row["Оснащенность, %"] = row.pop("Готовность, %")
+                    
         except Exception:
             data = default_data
     else:
@@ -131,7 +134,7 @@ if "password_correct" not in st.session_state:
 
 is_admin = st.session_state["password_correct"]
 
-# Если это не админ — полностью скрываем боковую панель и кнопку её открытия
+# Если это не админ — полностью скрываем боковую панель
 if not is_admin:
     st.markdown("""
     <style>
@@ -167,9 +170,9 @@ with tabs[0]:
     st.divider()
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Техническая готовность, %")
+        st.subheader("Техническая оснащенность, %")
         df = pd.DataFrame(data["readiness"])
-        fig = px.bar(df, x="Техника", y="Готовность, %", text="Готовность, %", color_discrete_sequence=[COLOR_GREEN])
+        fig = px.bar(df, x="Техника", y="Оснащенность, %", text="Оснащенность, %", color_discrete_sequence=[COLOR_GREEN])
         fig.update_traces(texttemplate='%{text}%', textposition='outside', textfont=dict(color=COLOR_DARK))
         fig.update_layout(yaxis_range=[0, 70], plot_bgcolor='rgba(255,255,255,0.7)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color=COLOR_DARK))
         st.plotly_chart(fig, use_container_width=True)
@@ -220,7 +223,7 @@ with tabs[3]:
     col1, col2, col3 = st.columns(3)
     metrics = data["leasing"]["metrics"]
     cols = [col1, col2, col3]
-    for i, m in enumerate(metrics[:3]): # Берем первые три для красоты
+    for i, m in enumerate(metrics[:3]):
         cols[i].metric(m["Статус"], m["Детали"], m["Сумма"])
         
     st.divider()
@@ -245,7 +248,7 @@ if is_admin:
         edit_data["metrics"] = dict(zip(edited["Техника"], edited["Количество"]))
 
         st.divider()
-        st.markdown("### 2. Техническая готовность (%)")
+        st.markdown("### 2. Техническая оснащенность (%)")
         edited = st.data_editor(pd.DataFrame(edit_data["readiness"]), num_rows="dynamic", use_container_width=True, key="readiness_edit")
         edit_data["readiness"] = edited.to_dict(orient="records")
 
@@ -295,6 +298,7 @@ if is_admin:
                 st.balloons()
             else:
                 st.warning(msg)
+
 # --- ВХОД ДЛЯ АДМИНИСТРАТОРА (В САМОМ НИЗУ СТРАНИЦЫ) ---
 if not is_admin:
     st.divider()
