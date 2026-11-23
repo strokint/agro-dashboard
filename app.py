@@ -82,14 +82,24 @@ def get_default_data():
 def load_data():
     if "data" in st.session_state:
         return st.session_state["data"]
+    
+    default_data = get_default_data()
+    
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            
+            # --- МИГРАЦИЯ ДАННЫХ ---
+            # Если в старом файле нет новых разделов, добавляем их из дефолтных данных
+            if "leasing" not in data:
+                data["leasing"] = default_data["leasing"]
+                
         except Exception:
-            data = get_default_data()
+            data = default_data
     else:
-        data = get_default_data()
+        data = default_data
+        
     st.session_state["data"] = data
     return data
 
