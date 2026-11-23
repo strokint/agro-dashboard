@@ -31,24 +31,6 @@ COLOR_TERRACOTTA = '#B8624F'
 COLOR_DARK = '#333333'
 DATA_FILE = "data.json"
 
-# --- АВТОРИЗАЦИЯ ---
-def check_password():
-    def password_entered():
-        correct_pwd = st.secrets.get("password", "admin")
-        if st.session_state["password"] == correct_pwd:
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]
-        else:
-            st.session_state["password_correct"] = False
-    if "password_correct" not in st.session_state:
-        st.sidebar.text_input("🔑 Пароль администратора", type="password", on_change=password_entered, key="password")
-        return False
-    elif not st.session_state["password_correct"]:
-        st.sidebar.text_input("🔑 Пароль администратора", type="password", on_change=password_entered, key="password")
-        st.sidebar.error("❌ Неверный пароль")
-        return False
-    return True
-
 # --- ДАННЫЕ ПО УМОЛЧАНИЮ ---
 def get_default_data():
     years = [str(y) for y in range(2020, 2027)]
@@ -81,7 +63,20 @@ def get_default_data():
             {"Техника": "Зерноуборочные", "План": 30, "Факт": 19},
             {"Техника": "Кормоуборочные", "План": 5, "Факт": 3},
             {"Техника": "Прочая техника", "План": 450, "Факт": 220}
-        ]
+        ],
+        "leasing": {
+            "total_text": "С начала 2026 года подано **77 заявок** на **90 единиц** техники.",
+            "metrics": [
+                {"Статус": "Одобрено", "Детали": "45 заявок / 79 ед.", "Сумма": "350,9 млн руб."},
+                {"Статус": "Поставлено", "Детали": "37 заявок / 41 ед.", "Сумма": "308,2 млн руб."},
+                {"Статус": "В процессе поставки", "Детали": "12 заявок / 21 ед.", "Сумма": "35,2 млн руб."}
+            ],
+            "rejections": [
+                "❌ Отказано по 28 заявкам на 28 единиц техники.",
+                "🔄 Отозвано аграриями: 14 заявок на 14 единиц.",
+                "🏢 Отказано АО «РОСАГРОЛИЗИНГ»: по 14 заявкам на 14 единиц."
+            ]
+        }
     }
 
 def load_data():
@@ -120,13 +115,22 @@ def save_to_github(content_str, commit_message):
         return True, "✅ Данные сохранены! Приложение обновится через 30–60 секунд."
     return False, f"❌ Ошибка {r.status_code}: {r.text[:200]}"
 
-# --- АВТОРИЗАЦИЯ И ДАННЫЕ ---
-st.sidebar.title("🔐 Вход")
-is_admin = check_password()
-
-if is_admin:
+# --- АВТОРИЗАЦИЯ (СКРЫТАЯ) ---
+st.sidebar.title("Управление")
+if "password_correct" not in st.session_state or not st.session_state["password_correct"]:
+    with st.sidebar.expander("🔐 Вход администратора"):
+        pwd = st.text_input("Пароль", type="password", key="pwd_input")
+        if st.button("Войти", use_container_width=True):
+            if pwd == st.secrets.get("password", "admin"):
+                st.session_state["password_correct"] = True
+                st.rerun()
+            else:
+                st.error("Неверный пароль")
+    is_admin = False
+else:
+    is_admin = True
     st.sidebar.success("✅ Вы вошли как администратор")
-    if st.sidebar.button("🚪 Выйти"):
+    if st.sidebar.button("🚪 Выйти", use_container_width=True):
         st.session_state["password_correct"] = False
         st.session_state.pop("data", None)
         st.rerun()
@@ -200,26 +204,27 @@ with tabs[2]:
 # --- ВКЛАДКА 4 ---
 with tabs[3]:
     st.subheader("Заявки на приобретение техники в АО Росагролизинг (2026 год)")
-    st.markdown("С начала 2026 года подано **77 заявок** на **90 единиц** техники.")
+    st.markdown(data["leasing"]["total_text"])
+    
     col1, col2, col3 = st.columns(3)
-    col1.metric("Одобрено", "45 заявок / 79 ед.", "350,9 млн руб.")
-    col2.metric("Поставлено", "37 заявок / 41 ед.", "308,2 млн руб.")
-    col3.metric("В процессе поставки", "12 заявок / 21 ед.", "35,2 млн руб.")
+    metrics = data["leasing"]["metrics"]
+    cols = [col1, col2, col3]
+    for i, m in enumerate(metrics[:3]): # Берем первые три для красоты
+        cols[i].metric(m["Статус"], m["Детали"], m["Сумма"])
+        
     st.divider()
     st.markdown("**Отказы и отзывы:**")
-    st.write("- ❌ Отказано по 28 заявкам на 28 единиц техники.")
-    st.write("- 🔄 Отозвано аграриями: 14 заявок на 14 единиц.")
-    st.write("- 🏢 Отказано АО «РОСАГРОЛИЗИНГ»: по 14 заявкам на 14 единиц.")
+    for rej in data["leasing"]["rejections"]:
+        st.write(f"- {rej}")
 
-# --- ВКЛАДКА 5: РЕДАКТИРОВАНИЕ (только для админа) ---
+# --- ВКЛАДКА 5: РЕДАКТИРОВАНИЕ ---
 if is_admin:
     with tabs[4]:
         st.subheader("✏️ Редактирование данных")
         st.info("После редактирования нажмите кнопку «Сохранить». Изменения уйдут в репозиторий GitHub, и приложение перезагрузится в течение минуты.")
 
-        edit_data = json.loads(json.dumps(data))  # копия
+        edit_data = json.loads(json.dumps(data))
 
-        # Дата
         edit_data["date"] = st.text_input("📅 Дата актуализации", value=edit_data["date"])
 
         st.divider()
@@ -254,6 +259,19 @@ if is_admin:
         st.markdown("**2026 год**")
         edited = st.data_editor(pd.DataFrame(edit_data["purchase_2026"]), num_rows="dynamic", use_container_width=True, key="p26_edit")
         edit_data["purchase_2026"] = edited.to_dict(orient="records")
+
+        st.divider()
+        st.markdown("### 6. Лизинг и заявки")
+        edit_data["leasing"]["total_text"] = st.text_area("Текст-описание", value=edit_data["leasing"]["total_text"], height=100)
+        
+        st.markdown("**Основные показатели:**")
+        edited = st.data_editor(pd.DataFrame(edit_data["leasing"]["metrics"]), num_rows="dynamic", use_container_width=True, key="leasing_metrics_edit")
+        edit_data["leasing"]["metrics"] = edited.to_dict(orient="records")
+
+        st.markdown("**Список отказов/отзывов (каждая строка — новый пункт):**")
+        rej_df = pd.DataFrame({"Текст": edit_data["leasing"]["rejections"]})
+        edited = st.data_editor(rej_df, num_rows="dynamic", use_container_width=True, key="leasing_rej_edit")
+        edit_data["leasing"]["rejections"] = edited["Текст"].dropna().tolist()
 
         st.divider()
         if st.button("💾 Сохранить и опубликовать", type="primary", use_container_width=True):
