@@ -126,19 +126,20 @@ def save_to_github(content_str, commit_message):
     return False, f"❌ Ошибка {r.status_code}: {r.text[:200]}"
 
 # --- АВТОРИЗАЦИЯ (СКРЫТАЯ) ---
-st.sidebar.title("Управление")
-if "password_correct" not in st.session_state or not st.session_state["password_correct"]:
-    with st.sidebar.expander("🔐 Вход администратора"):
-        pwd = st.text_input("Пароль", type="password", key="pwd_input")
-        if st.button("Войти", use_container_width=True):
-            if pwd == st.secrets.get("password", "admin"):
-                st.session_state["password_correct"] = True
-                st.rerun()
-            else:
-                st.error("Неверный пароль")
-    is_admin = False
+if "password_correct" not in st.session_state:
+    st.session_state["password_correct"] = False
+
+is_admin = st.session_state["password_correct"]
+
+# Если это не админ — полностью скрываем боковую панель и кнопку её открытия
+if not is_admin:
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"] { display: none !important; }
+    [data-testid="collapsedControl"] { display: none !important; }
+    </style>
+    """, unsafe_allow_html=True)
 else:
-    is_admin = True
     st.sidebar.success("✅ Вы вошли как администратор")
     if st.sidebar.button("🚪 Выйти", use_container_width=True):
         st.session_state["password_correct"] = False
@@ -294,3 +295,14 @@ if is_admin:
                 st.balloons()
             else:
                 st.warning(msg)
+# --- ВХОД ДЛЯ АДМИНИСТРАТОРА (В САМОМ НИЗУ СТРАНИЦЫ) ---
+if not is_admin:
+    st.divider()
+    with st.expander("🔒 Вход для администратора", expanded=False):
+        pwd = st.text_input("Пароль", type="password", key="admin_pwd_field")
+        if st.button("Войти", key="admin_login_btn"):
+            if pwd == st.secrets.get("password", "admin"):
+                st.session_state["password_correct"] = True
+                st.rerun()
+            else:
+                st.error("❌ Неверный пароль")
